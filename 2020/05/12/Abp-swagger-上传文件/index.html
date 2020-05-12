@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon-32x32-tao.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-tao.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-tao.svg">
+  <link rel="mask-icon" href="/images/favicon-32x32-tao.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="通过NPOI获取上传Execl的数据为了封装一个通用的上传接口,所以返回值类型采用List&lt;object&gt; 1234567891011121314151617181920212223242526272829303132333435363738394041&#x2F;&#x2F;&#x2F; &lt;summary&gt;&#x2F;&#x2F;&#x2F; 将上传的execl文件转换为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Abp swagger 上传文件">
+<meta property="og:url" content="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="荣陶博客">
+<meta property="og:description" content="通过NPOI获取上传Execl的数据为了封装一个通用的上传接口,所以返回值类型采用List&lt;object&gt; 1234567891011121314151617181920212223242526272829303132333435363738394041&#x2F;&#x2F;&#x2F; &lt;summary&gt;&#x2F;&#x2F;&#x2F; 将上传的execl文件转换为">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/1.png">
+<meta property="og:image" content="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/2.png">
+<meta property="article:published_time" content="2020-05-12T15:06:38.000Z">
+<meta property="article:modified_time" content="2020-05-12T16:36:18.325Z">
+<meta property="article:author" content="rongtao">
+<meta property="article:tag" content="Abp">
+<meta property="article:tag" content=".Net Core">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/1.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Abp swagger 上传文件 | 荣陶博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">荣陶博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">荣陶笔记</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rongtao">
+      <meta itemprop="description" content="用于分享日常学习">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="荣陶博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Abp swagger 上传文件
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-12 23:06:38" itemprop="dateCreated datePublished" datetime="2020-05-12T23:06:38+08:00">2020-05-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-13 00:36:18" itemprop="dateModified" datetime="2020-05-13T00:36:18+08:00">2020-05-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="通过NPOI获取上传Execl的数据"><a href="#通过NPOI获取上传Execl的数据" class="headerlink" title="通过NPOI获取上传Execl的数据"></a>通过NPOI获取上传Execl的数据</h1><p>为了封装一个通用的上传接口,所以返回值类型采用<code>List&lt;object&gt;</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;&#x2F; &lt;summary&gt;</span><br><span class="line">&#x2F;&#x2F;&#x2F; 将上传的execl文件转换为模型</span><br><span class="line">&#x2F;&#x2F;&#x2F; &lt;&#x2F;summary&gt;</span><br><span class="line">&#x2F;&#x2F;&#x2F; &lt;param name&#x3D;&quot;httpfile&quot;&gt;&lt;&#x2F;param&gt;</span><br><span class="line">&#x2F;&#x2F;&#x2F; &lt;param name&#x3D;&quot;isHasHead&quot;&gt;&lt;&#x2F;param&gt;</span><br><span class="line">&#x2F;&#x2F;&#x2F; &lt;returns&gt;&lt;&#x2F;returns&gt;</span><br><span class="line">public static List&lt;object&gt; ConvertExeclToListByHttpFile(HttpRequest httpfile, bool isHasHead &#x3D; true)</span><br><span class="line">&#123;</span><br><span class="line">    var fileStream &#x3D; httpfile.Form.Files.First();</span><br><span class="line">    var exName &#x3D; Path.GetExtension(fileStream?.FileName);</span><br><span class="line">    var modelList &#x3D; new List&lt;object&gt;();</span><br><span class="line">    IWorkbook workbook;</span><br><span class="line">    using (var fs &#x3D; fileStream?.OpenReadStream())</span><br><span class="line">    &#123;</span><br><span class="line">        workbook &#x3D; CreateWorkbook(exName, fs);</span><br><span class="line">        if (workbook &#x3D;&#x3D; null) return modelList;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    var sheetConfig &#x3D; workbook.GetSheet(ExcelModelConfig);</span><br><span class="line">    if (sheetConfig &#x3D;&#x3D; null) return modelList;</span><br><span class="line">    var firstSheet &#x3D; workbook.GetSheetAt(0);</span><br><span class="line">    if (firstSheet &#x3D;&#x3D; null) return modelList;</span><br><span class="line">    var configRow &#x3D; sheetConfig.GetRow(0);</span><br><span class="line">    var columnDictionary &#x3D; GetColumnDictionary(configRow);</span><br><span class="line">    System.Collections.IEnumerator rows &#x3D; firstSheet.GetRowEnumerator();</span><br><span class="line">    if (isHasHead)</span><br><span class="line">    &#123;</span><br><span class="line">        rows.MoveNext();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    while (rows.MoveNext())</span><br><span class="line">    &#123;</span><br><span class="line">        var row &#x3D; (IRow)rows.Current;</span><br><span class="line">        if (row &#x3D;&#x3D; null) continue;</span><br><span class="line">        var model &#x3D; SetValueToModelHasMsg(row, columnDictionary);</span><br><span class="line"></span><br><span class="line">        modelList.Add(model);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return modelList;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过读取上传的Execl,Execl模板里需要配置一个<strong>模型配置</strong>的sheet,用于获取上传的字段,并且返回到前端.</p>
+<img src="/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/1.png" class="" width="300" height="200" title="Execl模板">
+
+<blockquote>
+<p>通过上传的文件类型,获取execl版本</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">private static IWorkbook CreateWorkbook(string exName, Stream fs)</span><br><span class="line">&#123;</span><br><span class="line">    try</span><br><span class="line">    &#123;</span><br><span class="line">        &#x2F;&#x2F;2007</span><br><span class="line">        if (exName &#x3D;&#x3D; &quot;.xlsx&quot;)</span><br><span class="line">        &#123;</span><br><span class="line">            return new XSSFWorkbook(fs);</span><br><span class="line">        &#125;</span><br><span class="line">        &#x2F;&#x2F; 2003版本  </span><br><span class="line">        return new HSSFWorkbook(fs);</span><br><span class="line">    &#125;</span><br><span class="line">    catch (Exception)</span><br><span class="line">    &#123;</span><br><span class="line">        return null;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>获取模型配置的字段名称</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">private static Dictionary&lt;int, string&gt; GetColumnDictionary(IRow row)</span><br><span class="line">&#123;</span><br><span class="line">    Dictionary&lt;int, string&gt; dic &#x3D; new Dictionary&lt;int, string&gt;();</span><br><span class="line">    for (int i &#x3D; 0; i &lt; row.LastCellNum; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        ICell cell &#x3D; row.GetCell(i);</span><br><span class="line">        if (cell &#x3D;&#x3D; null)</span><br><span class="line">        &#123;</span><br><span class="line">            continue;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        dic.Add(i, cell.StringCellValue);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return dic;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>根据模型配置,获取Execl中的一行数据</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">private static object SetValueToModelHasMsg(IRow row, Dictionary&lt;int, string&gt; columnDictionary)</span><br><span class="line">&#123;</span><br><span class="line">    dynamic d &#x3D; new System.Dynamic.ExpandoObject();</span><br><span class="line">    var model &#x3D; d as ICollection&lt;KeyValuePair&lt;string, object&gt;&gt;;</span><br><span class="line">    &#x2F;&#x2F;创建属性，并赋值。</span><br><span class="line">    foreach (var dicConfig in columnDictionary)</span><br><span class="line">    &#123;</span><br><span class="line">        try</span><br><span class="line">        &#123;</span><br><span class="line">            if (string.IsNullOrEmpty(dicConfig.Value))</span><br><span class="line">            &#123;</span><br><span class="line">                continue;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            var cell &#x3D; row.Cells.FirstOrDefault(a &#x3D;&gt; a.ColumnIndex &#x3D;&#x3D; dicConfig.Key);</span><br><span class="line">            if (cell !&#x3D; null)</span><br><span class="line">            &#123;</span><br><span class="line">                string value &#x3D; GetValueByCell(cell);</span><br><span class="line">                if (string.IsNullOrEmpty(value)) value &#x3D; string.Empty;</span><br><span class="line">                var item &#x3D; model.FirstOrDefault(a &#x3D;&gt; a.Key &#x3D;&#x3D; dicConfig.Value);</span><br><span class="line">                if (default(KeyValuePair&lt;string, object&gt;).Equals(item) &#x3D;&#x3D; false)</span><br><span class="line">                &#123;</span><br><span class="line">                    &#x2F;&#x2F;字段已经存在,覆盖</span><br><span class="line">                    model.Remove(item);</span><br><span class="line">                &#125;</span><br><span class="line">                model.Add(new KeyValuePair&lt;string, object&gt;(dicConfig.Value, value));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        catch (Exception ex)</span><br><span class="line">        &#123;</span><br><span class="line">            var errItem &#x3D; model.FirstOrDefault(a &#x3D;&gt; a.Key &#x3D;&#x3D; &quot;Msg&quot;);</span><br><span class="line">            if (default(KeyValuePair&lt;string, object&gt;).Equals(errItem))</span><br><span class="line">            &#123;</span><br><span class="line">                model.Add(new KeyValuePair&lt;string, object&gt;(&quot;Msg&quot;, ex.Message));</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    var msgItem &#x3D; model.FirstOrDefault(a &#x3D;&gt; a.Key &#x3D;&#x3D; &quot;Msg&quot;);</span><br><span class="line">    if (default(KeyValuePair&lt;string, object&gt;).Equals(msgItem))</span><br><span class="line">    &#123;</span><br><span class="line">        model.Add(new KeyValuePair&lt;string, object&gt;(&quot;Msg&quot;, &quot;数据未校验！&quot;));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    return model;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="在Web-Core分布式服务层添加导入控制器"><a href="#在Web-Core分布式服务层添加导入控制器" class="headerlink" title="在Web.Core分布式服务层添加导入控制器"></a>在Web.Core分布式服务层添加导入控制器</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[AbpMvcAuthorize]</span><br><span class="line">[Route(&quot;api&#x2F;[controller]&#x2F;[action]&quot;)]</span><br><span class="line">public class ExeclFileController : AbpController</span><br><span class="line">&#123;</span><br><span class="line">    [HttpPost]</span><br><span class="line">    public ActionResult&lt;List&lt;object&gt;&gt; ImportExeclToGetModel(IFormFile file)</span><br><span class="line">    &#123;</span><br><span class="line">        return ExcelManager.ConvertExeclToListByHttpFile(Request);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>由于在core3.1中添加<code>AbpMvcAuthorize</code>需要在<code>Startup.cs</code>注册</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;启用校验</span><br><span class="line">app.UseAuthentication();</span><br><span class="line">&#x2F;&#x2F;支持控制器[AbpMvcAuthorize]特性的权限验证</span><br><span class="line">app.UseAuthorization();</span><br></pre></td></tr></table></figure>
+
+<h1 id="为swagger添加文件上传按钮"><a href="#为swagger添加文件上传按钮" class="headerlink" title="为swagger添加文件上传按钮"></a>为swagger添加文件上传按钮</h1><p><em>注: 目前swagger使用的版本为5.0的预览版</em><br>在swagger的<strong>AddSwaggerGen</strong>回调中,添加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">options.MapType(typeof(IFormFile), () &#x3D;&gt; new OpenApiSchema() &#123; Type &#x3D; &quot;file&quot; &#125;);</span><br></pre></td></tr></table></figure>
+<img src="/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/2.png" class="" width="500" height="200" title="swagger文件上传按钮">
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Abp/" rel="tag"># Abp</a>
+              <a href="/tags/Net-Core/" rel="tag"># .Net Core</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/10/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F/" rel="prev" title="数据库备份还原">
+      <i class="fa fa-chevron-left"></i> 数据库备份还原
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#通过NPOI获取上传Execl的数据"><span class="nav-number">1.</span> <span class="nav-text">通过NPOI获取上传Execl的数据</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#在Web-Core分布式服务层添加导入控制器"><span class="nav-number">1.1.</span> <span class="nav-text">在Web.Core分布式服务层添加导入控制器</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#为swagger添加文件上传按钮"><span class="nav-number">2.</span> <span class="nav-text">为swagger添加文件上传按钮</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rongtao</p>
+  <div class="site-description" itemprop="description">用于分享日常学习</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rongtao</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
