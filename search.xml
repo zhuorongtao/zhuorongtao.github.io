@@ -4,6 +4,27 @@
   
     
     <entry>
+      <title>Abp 文件导出</title>
+      <link href="/2020/05/14/Abp-%E6%96%87%E4%BB%B6%E5%AF%BC%E5%87%BA/"/>
+      <url>/2020/05/14/Abp-%E6%96%87%E4%BB%B6%E5%AF%BC%E5%87%BA/</url>
+      
+        <content type="html"><![CDATA[<p>Abp文件导出, 可以在分布式服务层导出(web.core层), 但是如果是列表数据导出, 若在web.core层写的话, 这样我们到导出功能与应用层分开了, 这样对于后期维护, 这会非常烦恼, 所以今天就把导出的功能写到应用层中</p><h1 id="封装导出方法"><a href="#封装导出方法" class="headerlink" title="封装导出方法"></a>封装导出方法</h1><ol><li><p>以<code>FileContentResult</code>返回文件<br> 在<strong>ExcelManager</strong>中定义<strong>GetFileResponse</strong>静态文件获取方法</p> <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">public static FileContentResult GetFileResponse&lt;T&gt;(List&lt;T&gt; data, string strFileName, string sheetName)</span><br><span class="line">&#123;</span><br><span class="line">    try</span><br><span class="line">    &#123;</span><br><span class="line">        FileContentResult fileContentResult &#x3D; new FileContentResult(ListToDownExcel(data, sheetName).ToArray(), &quot;application&#x2F;vnd.ms-excel&quot;)</span><br><span class="line">        &#123;</span><br><span class="line">            FileDownloadName &#x3D; strFileName</span><br><span class="line">        &#125;;</span><br><span class="line">        return fileContentResult;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    catch (Exception)</span><br><span class="line">    &#123;</span><br><span class="line">        throw new UserFriendlyException(&quot;服务器繁忙,请重试!&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p> 其中<code>ListToDownExcel</code>的方法主要是获取文件流, 需要根据具体业务</p></li><li><p>在<strong>Application</strong>层中应用导出接口</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public async Task&lt;FileContentResult&gt; ExportAsset(AssetSearchPageInput input)</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F;获取需要导出的数据</span><br><span class="line">    var dataList &#x3D; await _assetManager.GetLoadFilterData(input.Asset).ToListAsync();</span><br><span class="line">    &#x2F;&#x2F;转换为导出模型</span><br><span class="line">    var datas &#x3D; ObjectMapper.Map&lt;List&lt;AssetExportDto&gt;&gt;(dataList);</span><br><span class="line">    &#x2F;&#x2F;execl文件导出</span><br><span class="line">    return ExcelManager.GetFileResponse(datas, &quot;xxx.xls&quot;, &quot;xxx&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li></ol>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> Abp </tag>
+            
+            <tag> .Net Core </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>Abp swagger 上传文件</title>
       <link href="/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/"/>
       <url>/2020/05/12/Abp-swagger-%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6/</url>
