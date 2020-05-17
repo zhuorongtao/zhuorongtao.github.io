@@ -21,16 +21,16 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="1. 下载.Net Core安装包.Net Core 3.1安装地址   .Net Core SDK 3.1用于代码开发 Hosting Bundle用于在IIS上发布     安装完然Bundle后, 需要重启iis服务 12net stop was &#x2F;ynet start w3svc 发布网站时，应用池标识要设置为LocalSystem 2. 发布注意项发布时，若swagger出现500，大多">
+  <meta name="description" content="1. 下载.Net Core安装包  .Net Core 3.1安装地址   .Net Core SDK 3.1用于代码开发 Hosting Bundle用于在IIS上发布      安装完然Bundle后, 需要重启iis服务  12net stop was &#x2F;ynet start w3svc发布网站时，应用池标识要设置为LocalSystem 2. 发布注意项  发布时，若swagger出现5">
 <meta property="og:type" content="article">
 <meta property="og:title" content=".Net Core Abp 环境安装">
 <meta property="og:url" content="http://yoursite.com/2020/05/10/Net-Core-Abp-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85/index.html">
 <meta property="og:site_name" content="荣陶博客">
-<meta property="og:description" content="1. 下载.Net Core安装包.Net Core 3.1安装地址   .Net Core SDK 3.1用于代码开发 Hosting Bundle用于在IIS上发布     安装完然Bundle后, 需要重启iis服务 12net stop was &#x2F;ynet start w3svc 发布网站时，应用池标识要设置为LocalSystem 2. 发布注意项发布时，若swagger出现500，大多">
+<meta property="og:description" content="1. 下载.Net Core安装包  .Net Core 3.1安装地址   .Net Core SDK 3.1用于代码开发 Hosting Bundle用于在IIS上发布      安装完然Bundle后, 需要重启iis服务  12net stop was &#x2F;ynet start w3svc发布网站时，应用池标识要设置为LocalSystem 2. 发布注意项  发布时，若swagger出现5">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/2020/05/10/Net-Core-Abp-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85/2.png">
 <meta property="article:published_time" content="2020-05-10T03:28:18.000Z">
-<meta property="article:modified_time" content="2020-05-10T07:45:15.804Z">
+<meta property="article:modified_time" content="2020-05-17T07:41:44.518Z">
 <meta property="article:author" content="rongtao">
 <meta property="article:tag" content=".Net Core">
 <meta name="twitter:card" content="summary">
@@ -210,10 +210,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-05-10 11:28:18 / 修改时间：15:45:15" itemprop="dateCreated datePublished" datetime="2020-05-10T11:28:18+08:00">2020-05-10</time>
+              <time title="创建时间：2020-05-10 11:28:18" itemprop="dateCreated datePublished" datetime="2020-05-10T11:28:18+08:00">2020-05-10</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-17 15:41:44" itemprop="dateModified" datetime="2020-05-17T15:41:44+08:00">2020-05-17</time>
+              </span>
 
           
 
@@ -226,29 +232,22 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="1-下载-Net-Core安装包"><a href="#1-下载-Net-Core安装包" class="headerlink" title="1. 下载.Net Core安装包"></a>1. 下载.Net Core安装包</h1><p><a href="https://dotnet.microsoft.com/download/dotnet-core/3.1" target="_blank" rel="noopener" title="安装地址">.Net Core 3.1安装地址</a></p>
+        <h1 id="1-下载-Net-Core安装包"><a href="#1-下载-Net-Core安装包" class="headerlink" title="1. 下载.Net Core安装包"></a>1. 下载.Net Core安装包</h1><p>  <a href="https://dotnet.microsoft.com/download/dotnet-core/3.1" target="_blank" rel="noopener" title="安装地址">.Net Core 3.1安装地址</a></p>
 <blockquote>
 <ul>
 <li>.Net Core SDK 3.1用于代码开发</li>
-<li>Hosting Bundle用于在IIS上发布</li>
+<li>Hosting Bundle用于在IIS上发布<img src="/2020/05/10/Net-Core-Abp-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85/2.png" class="" width="500" height="200" title="下载SDK及Bundle">
+</li>
 </ul>
 </blockquote>
-<img src="/2020/05/10/Net-Core-Abp-%E7%8E%AF%E5%A2%83%E5%AE%89%E8%A3%85/2.png" class="" width="500" height="200" title="下载SDK及Bundle">
-
-<p>安装完然Bundle后, 需要重启iis服务</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net stop was /y</span><br><span class="line">net start w3svc</span><br></pre></td></tr></table></figure>
-<p><strong>发布网站时，应用池标识要设置为LocalSystem</strong></p>
-<h1 id="2-发布注意项"><a href="#2-发布注意项" class="headerlink" title="2. 发布注意项"></a>2. 发布注意项</h1><p>发布时，若swagger出现500，大多数是xml没有生成</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">PropertyGroup</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">GenerateDocumentationFile</span>&gt;</span>true<span class="tag">&lt;/<span class="name">GenerateDocumentationFile</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">PropertyGroup</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>需要在项目csproj文件的<code>&lt;PropertyGroup&gt;</code>标签中，添加：</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">GenerateDocumentationFile</span>&gt;</span>true<span class="tag">&lt;/<span class="name">GenerateDocumentationFile</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="2-1-在IIS上调试"><a href="#2-1-在IIS上调试" class="headerlink" title="2.1 在IIS上调试"></a>2.1 在IIS上调试</h2><p>修改web.config 中的aspNetCore的arguments为调试生成的路径</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">aspNetCore</span> <span class="attr">processPath</span>=<span class="string">"dotnet"</span> <span class="attr">arguments</span>=<span class="string">"bin\Debug\netcoreapp2.2\MPACore.PhoneBook.Web.Mvc.dll"</span> <span class="attr">stdoutLogEnabled</span>=<span class="string">"true"</span> <span class="attr">stdoutLogFile</span>=<span class="string">".\logs\stdout"</span> <span class="attr">forwardWindowsAuthToken</span>=<span class="string">"false"</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="2-2-处理-不支持RESTful的问题"><a href="#2-2-处理-不支持RESTful的问题" class="headerlink" title="2.2 处理 不支持RESTful的问题"></a>2.2 处理 不支持RESTful的问题</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--支持RESTful,PUT,DELET,POST,GET请求 begin--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modules</span> <span class="attr">runAllManagedModulesForAllRequests</span>=<span class="string">"true"</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">remove</span> <span class="attr">name</span>=<span class="string">"WebDAVModule"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">modules</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">handlers</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">remove</span> <span class="attr">name</span>=<span class="string">"WebDAV"</span> /&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">"aspNetCore"</span> <span class="attr">path</span>=<span class="string">"*"</span> <span class="attr">verb</span>=<span class="string">"*"</span> <span class="attr">modules</span>=<span class="string">"AspNetCoreModuleV2"</span> <span class="attr">resourceType</span>=<span class="string">"Unspecified"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">handlers</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!--支持RESTful,PUT,DELET,POST,GET请求 end--&gt;</span></span><br></pre></td></tr></table></figure>
+<p>  安装完然Bundle后, 需要重启iis服务<br>  <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">net stop was /y</span><br><span class="line">net start w3svc</span><br></pre></td></tr></table></figure><br><strong>发布网站时，应用池标识要设置为LocalSystem</strong></p>
+<h1 id="2-发布注意项"><a href="#2-发布注意项" class="headerlink" title="2. 发布注意项"></a>2. 发布注意项</h1><p>  发布时，若swagger出现500，大多数是xml没有生成<br>  <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">PropertyGroup</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">GenerateDocumentationFile</span>&gt;</span>true<span class="tag">&lt;/<span class="name">GenerateDocumentationFile</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">PropertyGroup</span>&gt;</span></span><br></pre></td></tr></table></figure><br>  需要在项目csproj文件的<code>&lt;PropertyGroup&gt;</code>标签中，添加：<br>  <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">GenerateDocumentationFile</span>&gt;</span>true<span class="tag">&lt;/<span class="name">GenerateDocumentationFile</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="2-1-在IIS上调试"><a href="#2-1-在IIS上调试" class="headerlink" title="2.1 在IIS上调试"></a>2.1 在IIS上调试</h2><p>  修改web.config 中的aspNetCore的arguments为调试生成的路径<br>  <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">aspNetCore</span> <span class="attr">processPath</span>=<span class="string">"dotnet"</span> <span class="attr">arguments</span>=<span class="string">"bin\Debug\netcoreapp2.2\MPACore.PhoneBook.Web.Mvc.dll"</span> <span class="attr">stdoutLogEnabled</span>=<span class="string">"true"</span> <span class="attr">stdoutLogFile</span>=<span class="string">".\logs\stdout"</span> <span class="attr">forwardWindowsAuthToken</span>=<span class="string">"false"</span>&gt;</span></span><br></pre></td></tr></table></figure></p>
+<h2 id="2-2-处理-不支持RESTful的问题"><a href="#2-2-处理-不支持RESTful的问题" class="headerlink" title="2.2 处理 不支持RESTful的问题"></a>2.2 处理 不支持RESTful的问题</h2>  <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">&lt;!--支持RESTful,PUT,DELET,POST,GET请求 begin--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modules</span> <span class="attr">runAllManagedModulesForAllRequests</span>=<span class="string">"true"</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">remove</span> <span class="attr">name</span>=<span class="string">"WebDAVModule"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">modules</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">handlers</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">remove</span> <span class="attr">name</span>=<span class="string">"WebDAV"</span> /&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">"aspNetCore"</span> <span class="attr">path</span>=<span class="string">"*"</span> <span class="attr">verb</span>=<span class="string">"*"</span> <span class="attr">modules</span>=<span class="string">"AspNetCoreModuleV2"</span> <span class="attr">resourceType</span>=<span class="string">"Unspecified"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">handlers</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!--支持RESTful,PUT,DELET,POST,GET请求 end--&gt;</span></span><br></pre></td></tr></table></figure>
 <h1 id="3-abp添加实体步骤"><a href="#3-abp添加实体步骤" class="headerlink" title="3. abp添加实体步骤"></a>3. abp添加实体步骤</h1><ol>
 <li>添加迁移文件<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add-migration &lt;迁移名称&gt;</span><br></pre></td></tr></table></figure></li>
 <li>更新数据库<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update-database</span><br></pre></td></tr></table></figure></li>
+<li>多个数据库上下文迁移<br><strong>需要指定迁移哪个数据库上下文 xxxDbContext</strong><br><code>add-migration &quot;标识&quot; -Context xxxDbContext</code><br><code>update-database -Context xxxDbContext</code></li>
 </ol>
 
     </div>
