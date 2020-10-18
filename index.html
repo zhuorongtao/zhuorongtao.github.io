@@ -182,6 +182,255 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/18/%E9%AB%98%E5%8F%AF%E7%94%A8%E5%A4%9Amaster%E8%8A%82%E7%82%B9%E9%9B%86%E7%BE%A4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rongtao">
+      <meta itemprop="description" content="用于分享日常学习">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="荣陶博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/10/18/%E9%AB%98%E5%8F%AF%E7%94%A8%E5%A4%9Amaster%E8%8A%82%E7%82%B9%E9%9B%86%E7%BE%A4/" class="post-title-link" itemprop="url">高可用多master节点集群</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-10-18 09:10:12 / 修改时间：09:11:34" itemprop="dateCreated datePublished" datetime="2020-10-18T09:10:12+08:00">2020-10-18</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><em>每个master节点都需要执行命令</em></p>
+<p><strong>允许用户ssh远程登录</strong></p>
+<p>注：在root用户修改sshd_config文件</p>
+<p>vi /etc/ssh/sshd_config</p>
+<p>修改 PasswordAuthentication yes</p>
+<p><strong>设置系统主机名以及 Host 文件的相互解析</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 不同机器rt-master11需要不同</span></span><br><span class="line">hostnamectl set-hostname rt-master11</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将配置复制到各个节点</span></span><br><span class="line">scp /etc/hosts root@192.168.180.31:/etc/hosts</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装依赖包</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y iptables ipset wget ipvsadm curl wget net-tools</span><br></pre></td></tr></table></figure>
+
+<p><strong>设置防火墙为 Iptables 并设置空规则</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop firewalld &amp;&amp; systemctl disable firewalld</span><br><span class="line">yum -y install iptables-services &amp;&amp; systemctl start iptables &amp;&amp; systemctl enable iptables &amp;&amp; iptables -F &amp;&amp; service iptables save</span><br></pre></td></tr></table></figure>
+
+<p><strong>关闭 虚拟内存 及 SELINUX</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 关闭虚拟内存</span></span><br><span class="line">swapoff -a &amp;&amp; sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab</span><br><span class="line"><span class="meta">#</span><span class="bash"> 关闭 SELINUX</span></span><br><span class="line">setenforce 0 &amp;&amp; sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config</span><br><span class="line">reboot</span><br><span class="line"><span class="meta">#</span><span class="bash"> 确认selinux已经被禁用</span></span><br><span class="line">getenforce</span><br></pre></td></tr></table></figure>
+
+<p><strong>创建安装目录</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mkdir ~/install-k8s ~/install-k8s/core ~/install-k8s/pluging ~/install-k8s/pluging/flannel</span><br></pre></td></tr></table></figure>
+
+<p><strong>调整内核参数，对于 K8S</strong></p>
+<p><em>在~/install-k8s/core创建</em></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; kubernetes.conf &lt;&lt;EOF </span><br><span class="line">net.bridge.bridge-nf-call-iptables=1 </span><br><span class="line">net.bridge.bridge-nf-call-ip6tables=1</span><br><span class="line">net.ipv4.ip_forward=1</span><br><span class="line">net.ipv4.tcp_tw_recycle=0</span><br><span class="line">vm.swappiness=0 # 禁止使用 swap 空间，只有当系统 OOM 时才允许使用它 </span><br><span class="line">vm.overcommit_memory=1 # 不检查物理内存是否够用</span><br><span class="line">vm.panic_on_oom=0 # 开启 OOM </span><br><span class="line">fs.inotify.max_user_instances=8192 </span><br><span class="line">fs.inotify.max_user_watches=1048576 </span><br><span class="line">fs.file-max=52706963 </span><br><span class="line">fs.nr_open=52706963 </span><br><span class="line">net.ipv6.conf.all.disable_ipv6=1 </span><br><span class="line">net.netfilter.nf_conntrack_max=2310720 </span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p><strong>modprobe br_netfilter模块开机加载</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/rc.sysinit</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加以下文本</span></span><br><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">for file in /etc/sysconfig/modules/*.modules ; do</span><br><span class="line">[ -x $file ] &amp;&amp; $file</span><br><span class="line">done</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加启动模块</span></span><br><span class="line">cat &gt; /etc/sysconfig/modules/br_netfilter.modules &lt;&lt;EOF </span><br><span class="line">modprobe br_netfilter</span><br><span class="line">modprobe ip_conntrack</span><br><span class="line">EOF</span><br><span class="line"><span class="meta">#</span><span class="bash"> 检查启动模块</span></span><br><span class="line">vi /etc/sysconfig/modules/br_netfilter.modules</span><br><span class="line"><span class="meta">#</span><span class="bash"> 增加权限</span></span><br><span class="line">chmod 755 /etc/sysconfig/modules/br_netfilter.modules</span><br><span class="line">reboot</span><br><span class="line"><span class="meta">#</span><span class="bash"> 重启后 模块自动加载</span></span><br><span class="line">lsmod |grep br_netfilter</span><br></pre></td></tr></table></figure>
+
+<p><strong>复制配置到开机启动</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">modprobe br_netfilter</span><br><span class="line">cp kubernetes.conf /etc/sysctl.d/kubernetes.conf</span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动配置</span></span><br><span class="line">sysctl -p /etc/sysctl.d/kubernetes.conf</span><br></pre></td></tr></table></figure>
+
+<p><strong>调整系统时区</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 设置系统时区为 中国/上海</span></span><br><span class="line">timedatectl set-timezone Asia/Shanghai</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将当前的 UTC 时间写入硬件时钟 </span></span><br><span class="line">timedatectl set-local-rtc 0</span><br><span class="line"><span class="meta">#</span><span class="bash"> 重启依赖于系统时间的服务</span></span><br><span class="line">systemctl restart rsyslog</span><br><span class="line">systemctl restart crond</span><br></pre></td></tr></table></figure>
+
+<p><strong>关闭系统不需要服务</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl stop postfix &amp;&amp; systemctl disable postfix</span><br></pre></td></tr></table></figure>
+
+<p><strong>使用Vagrant设置虚拟机，设置默认网卡</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">route add default gw 192.168.180.1</span><br><span class="line">[root@rt-master21 hightUse]# route -n</span><br><span class="line">Kernel IP routing table</span><br><span class="line">Destination     Gateway         Genmask         Flags Metric Ref    Use Iface</span><br><span class="line">0.0.0.0         192.168.180.1   0.0.0.0         UG    0      0        0 eth1</span><br><span class="line">0.0.0.0         10.0.2.2        0.0.0.0         UG    100    0        0 eth0</span><br><span class="line">10.0.2.0        0.0.0.0         255.255.255.0   U     100    0        0 eth0</span><br><span class="line">172.17.0.0      0.0.0.0         255.255.0.0     U     0      0        0 docker0</span><br><span class="line">192.168.180.0   0.0.0.0         255.255.255.0   U     101    0        0 eth1</span><br></pre></td></tr></table></figure>
+
+<p><strong>设置 rsyslogd 和 systemd journald</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 持久化保存日志的目录</span></span><br><span class="line">mkdir /var/log/journal </span><br><span class="line">mkdir /etc/systemd/journald.conf.d</span><br><span class="line"></span><br><span class="line">cat &gt; /etc/systemd/journald.conf.d/99-prophet.conf &lt;&lt;EOF </span><br><span class="line">[Journal]</span><br><span class="line"><span class="meta">#</span><span class="bash"> 持久化保存到磁盘</span></span><br><span class="line">Storage=persistent</span><br><span class="line"><span class="meta">#</span><span class="bash"> 压缩历史日志 </span></span><br><span class="line">Compress=yes</span><br><span class="line">SyncIntervalSec=5m </span><br><span class="line">RateLimitInterval=30s </span><br><span class="line">RateLimitBurst=1000</span><br><span class="line"><span class="meta">#</span><span class="bash"> 最大占用空间 10G </span></span><br><span class="line">SystemMaxUse=10G</span><br><span class="line"><span class="meta">#</span><span class="bash"> 单日志文件最大 200M </span></span><br><span class="line">SystemMaxFileSize=200M</span><br><span class="line"><span class="meta">#</span><span class="bash"> 日志保存时间 2 周 </span></span><br><span class="line">MaxRetentionSec=2week</span><br><span class="line"><span class="meta">#</span><span class="bash"> 不将日志转发到 syslog </span></span><br><span class="line">ForwardToSyslog=no</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动日志记录服务</span></span><br><span class="line">systemctl restart systemd-journald</span><br></pre></td></tr></table></figure>
+
+<p><strong>关闭 NUMA</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 备份默认文件</span></span><br><span class="line">cp /etc/default/grub&#123;,.bak&#125;</span><br><span class="line"><span class="meta">#</span><span class="bash"> 在 GRUB_CMDLINE_LINUX 一行添加 `numa=off` 参数</span></span><br><span class="line">vi /etc/default/grub</span><br><span class="line"><span class="meta">#</span><span class="bash"> 检查</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> diff /etc/default/grub.bak /etc/default/grub</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 6c6</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> &lt; GRUB_CMDLINE_LINUX=<span class="string">"no_timer_check console=tty0 console=ttyS0,115200n8 net.ifnames=0 biosdevname=0 elevator=noop crashkernel=auto"</span></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> ---</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> &gt; GRUB_CMDLINE_LINUX=<span class="string">"no_timer_check console=tty0 console=ttyS0,115200n8 net.ifnames=0 biosdevname=0 elevator=noop crashkernel=auto numa=off"</span></span></span><br><span class="line">cp /boot/grub2/grub.cfg&#123;,.bak&#125;</span><br><span class="line">grub2-mkconfig -o /boot/grub2/grub.cfg</span><br></pre></td></tr></table></figure>
+
+<p><strong>kube-proxy开启ipvs的前置条件</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">modprobe br_netfilter</span><br><span class="line">cat &gt; /etc/sysconfig/modules/ipvs.modules &lt;&lt;EOF </span><br><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">modprobe -- ip_vs</span><br><span class="line">modprobe -- ip_vs_rr</span><br><span class="line">modprobe -- ip_vs_wrr</span><br><span class="line">modprobe -- ip_vs_sh</span><br><span class="line">modprobe -- nf_conntrack_ipv4</span><br><span class="line">EOF</span><br><span class="line">chmod 755 /etc/sysconfig/modules/ipvs.modules &amp;&amp; bash /etc/sysconfig/modules/ipvs.modules &amp;&amp; lsmod | grep -e ip_vs -e nf_conntrack_ipv4</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装 Docker 软件</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 安装yum工具</span></span><br><span class="line">yum install -y yum-utils</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置稳定的存储库</span></span><br><span class="line">yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装docker</span></span><br><span class="line">yum install -y docker-ce</span><br><span class="line"><span class="meta">#</span><span class="bash"> 配置 daemon</span></span><br><span class="line">mkdir /etc/docker</span><br><span class="line">cat &gt; /etc/docker/daemon.json &lt;&lt;EOF </span><br><span class="line">&#123;</span><br><span class="line">  "registry-mirrors": ["https://77xsmdni.mirror.aliyuncs.com/"],</span><br><span class="line">  "exec-opts": ["native.cgroupdriver=systemd"], </span><br><span class="line">  "log-driver": "json-file",</span><br><span class="line">  "log-opts": &#123;</span><br><span class="line">    "max-size": "100m" </span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">systemctl daemon-reload</span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动docker服务</span></span><br><span class="line">systemctl start docker &amp;&amp; systemctl enable docker</span><br></pre></td></tr></table></figure>
+
+<p><strong>在主节点启动 Haproxy 与 Keepalived 容器</strong></p>
+<p><em>创建文件夹~/install-k8s/hightUse</em></p>
+<p>创建haproxy.cfg配置文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir -p data/lb/etc</span><br><span class="line">vi data/lb/etc/haproxy.cfg</span><br></pre></td></tr></table></figure>
+
+<p>逐个进行负载，避免节点没启动而报错，先负载180.21的节点</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">global</span></span><br><span class="line"><span class="string">log</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> <span class="string">local0</span></span><br><span class="line"><span class="string">log</span> <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> <span class="string">local1</span> <span class="string">notice</span></span><br><span class="line"><span class="string">maxconn</span> <span class="number">4096</span></span><br><span class="line"><span class="comment">#chroot /usr/share/haproxy</span></span><br><span class="line"><span class="comment">#user haproxy</span></span><br><span class="line"><span class="comment">#group haproxy</span></span><br><span class="line"><span class="string">daemon</span></span><br><span class="line"></span><br><span class="line"><span class="string">defaults</span></span><br><span class="line">    <span class="string">log</span>     <span class="string">global</span></span><br><span class="line">    <span class="string">mode</span>    <span class="string">http</span></span><br><span class="line">    <span class="string">option</span>  <span class="string">httplog</span></span><br><span class="line">    <span class="string">option</span>  <span class="string">dontlognull</span></span><br><span class="line">    <span class="string">retries</span> <span class="number">3</span></span><br><span class="line">    <span class="string">option</span> <span class="string">redispatch</span></span><br><span class="line">    <span class="string">timeout</span> <span class="string">connect</span>  <span class="number">5000</span></span><br><span class="line">    <span class="string">timeout</span> <span class="string">client</span>  <span class="number">50000</span></span><br><span class="line">    <span class="string">timeout</span> <span class="string">server</span>  <span class="number">50000</span></span><br><span class="line"></span><br><span class="line"><span class="string">frontend</span> <span class="string">stats-front</span></span><br><span class="line">  <span class="string">bind</span> <span class="string">*:8081</span></span><br><span class="line">  <span class="string">mode</span> <span class="string">http</span></span><br><span class="line">  <span class="string">default_backend</span> <span class="string">stats-back</span></span><br><span class="line"></span><br><span class="line"><span class="string">frontend</span> <span class="string">fe_k8s_6444</span></span><br><span class="line">  <span class="string">bind</span> <span class="string">*:6444</span></span><br><span class="line">  <span class="string">mode</span> <span class="string">tcp</span></span><br><span class="line">  <span class="string">timeout</span> <span class="string">client</span> <span class="string">1h</span></span><br><span class="line">  <span class="string">log</span> <span class="string">global</span></span><br><span class="line">  <span class="string">option</span> <span class="string">tcplog</span></span><br><span class="line">  <span class="string">default_backend</span> <span class="string">be_k8s_6443</span></span><br><span class="line">  <span class="string">acl</span> <span class="string">is_websocket</span> <span class="string">hdr(Upgrade)</span> <span class="string">-i</span> <span class="string">WebSocket</span></span><br><span class="line">  <span class="string">acl</span> <span class="string">is_websocket</span> <span class="string">hdr_beg(Host)</span> <span class="string">-i</span> <span class="string">ws</span></span><br><span class="line"></span><br><span class="line"><span class="string">backend</span> <span class="string">stats-back</span></span><br><span class="line">  <span class="string">mode</span> <span class="string">http</span></span><br><span class="line">  <span class="string">balance</span> <span class="string">roundrobin</span></span><br><span class="line">  <span class="string">stats</span> <span class="string">uri</span> <span class="string">/haproxy/stats</span></span><br><span class="line">  <span class="string">stats</span> <span class="string">auth</span> <span class="string">pxcstats:secret</span></span><br><span class="line"></span><br><span class="line"><span class="string">backend</span> <span class="string">be_k8s_6443</span></span><br><span class="line">  <span class="string">mode</span> <span class="string">tcp</span></span><br><span class="line">  <span class="string">timeout</span> <span class="string">queue</span> <span class="string">1h</span></span><br><span class="line">  <span class="string">timeout</span> <span class="string">server</span> <span class="string">1h</span></span><br><span class="line">  <span class="string">timeout</span> <span class="string">connect</span> <span class="string">1h</span></span><br><span class="line">  <span class="string">log</span> <span class="string">global</span></span><br><span class="line">  <span class="string">balance</span> <span class="string">roundrobin</span></span><br><span class="line">  <span class="string">server</span> <span class="string">rancher01</span> <span class="number">192.168</span><span class="number">.180</span><span class="number">.21</span><span class="string">:6443</span></span><br></pre></td></tr></table></figure>
+
+<p>创建启动haproxy的脚本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">MasterIP1=192.168.180.11</span><br><span class="line">MasterIP2=192.168.180.21</span><br><span class="line">MasterIP3=192.168.180.31</span><br><span class="line">MasterPort=6443</span><br><span class="line"></span><br><span class="line">docker run -d --restart=always --name HAProxy-K8S -p 6444:6444 \</span><br><span class="line">        -e MasterIP1=$MasterIP1 \</span><br><span class="line">        -e MasterIP2=$MasterIP2 \</span><br><span class="line">        -e MasterIP3=$MasterIP3 \</span><br><span class="line">        -e MasterPort=$MasterPort \</span><br><span class="line">        -v /root/install-k8s/hightUse/data/lb/etc/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg \</span><br><span class="line">        wise2c/haproxy-k8s</span><br></pre></td></tr></table></figure>
+
+<p>下载haproxy镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 每个主节点都需要</span></span><br><span class="line">docker pull wise2c/haproxy-k8s</span><br><span class="line"><span class="meta">#</span><span class="bash"> 运行haproxy镜像</span></span><br><span class="line">chmod a+x data/lb/start-haproxy.sh</span><br><span class="line">./data/lb/start-haproxy.sh</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动keepalived</strong></p>
+<p>vi /root/install-k8s/hightUse/data/lb/start-keepalived.sh</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">VIRTUAL_IP=192.168.180.100</span><br><span class="line">INTERFACE=eth1</span><br><span class="line">NETMASK_BIT=24</span><br><span class="line">CHECK_PORT=6444</span><br><span class="line">RID=10</span><br><span class="line">VRID=160</span><br><span class="line">MCAST_GROUP=224.0.0.18</span><br><span class="line"></span><br><span class="line">docker run -itd --restart=always --name=Keepalived-K8S \</span><br><span class="line">        --net=host --cap-add=NET_ADMIN \</span><br><span class="line">        -e VIRTUAL_IP=$VIRTUAL_IP \</span><br><span class="line">        -e INTERFACE=$INTERFACE \</span><br><span class="line">        -e CHECK_PORT=$CHECK_PORT \</span><br><span class="line">        -e RID=$RID \</span><br><span class="line">        -e VRID=$VRID \</span><br><span class="line">        -e NETMASK_BIT=$NETMASK_BIT \</span><br><span class="line">        -e MCAST_GROUP=$MCAST_GROUP \</span><br><span class="line">        wise2c/keepalived-k8s</span><br></pre></td></tr></table></figure>
+
+<p>运行keepalived镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">chmod a+x data/lb/start-keepalived.sh</span><br><span class="line">./data/lb/start-keepalived.sh</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装 Kubeadm (主从配置)</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo</span><br><span class="line">[kubernetes]</span><br><span class="line">name=Kubernetes </span><br><span class="line">baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64 </span><br><span class="line">enabled=1</span><br><span class="line">gpgcheck=0</span><br><span class="line">repo_gpgcheck=0 </span><br><span class="line">gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg </span><br><span class="line">http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg </span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装k8s</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">yum -y install kubeadm kubectl kubelet</span><br><span class="line">systemctl enable kubelet.service</span><br><span class="line"><span class="meta">#</span><span class="bash"> 设置节点ip，处理node的INTERNAL-IP为10.0.2.15</span></span><br><span class="line">vi /etc/sysconfig/kubelet</span><br><span class="line"><span class="meta">#</span><span class="bash"> 修改为以下内容</span></span><br><span class="line">KUBELET_EXTRA_ARGS="--node-ip=192.168.180.21"</span><br><span class="line"><span class="meta">#</span><span class="bash"> 重启服务</span></span><br><span class="line">systemctl restart kubelet.service</span><br><span class="line"><span class="meta">#</span><span class="bash"> 使kubectl可以自动补充</span></span><br><span class="line">source &lt;(kubectl completion bash)</span><br><span class="line">echo "source &lt;(kubectl completion bash)" &gt;&gt; ~/.bashrc</span><br></pre></td></tr></table></figure>
+
+<p><strong>创建k8s初始化文件</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubeadm config print init-defaults &gt; kubeadm-config.yaml</span><br></pre></td></tr></table></figure>
+
+<p>修改以下内容</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 节点ip地址</span></span><br><span class="line"><span class="attr">advertiseAddress:</span> <span class="number">192.168</span><span class="number">.180</span><span class="number">.21</span></span><br><span class="line"><span class="comment"># 镜像仓库</span></span><br><span class="line"><span class="attr">imageRepository:</span> <span class="string">registry.aliyuncs.com/google_containers</span></span><br><span class="line"><span class="comment"># 高可用多master节点需要配置改vip地址, 在clusterName下配置</span></span><br><span class="line"><span class="attr">controlPlaneEndpoint:</span> <span class="string">"192.168.180.100:6444"</span></span><br><span class="line"><span class="comment"># k8s版本</span></span><br><span class="line"><span class="attr">kubernetesVersion:</span> <span class="string">v1.18.3</span></span><br><span class="line"><span class="comment"># 在networking:下添加 podSubnet: "10.244.0.0/16" ，因为这是网络插件的默认网段</span></span><br><span class="line"><span class="attr">networking:</span></span><br><span class="line">  <span class="attr">dnsDomain:</span> <span class="string">cluster.local</span></span><br><span class="line">  <span class="attr">podSubnet:</span> <span class="string">"10.244.0.0/16"</span></span><br><span class="line">  <span class="attr">serviceSubnet:</span> <span class="number">10.96</span><span class="number">.0</span><span class="number">.0</span><span class="string">/12</span></span><br><span class="line">  </span><br><span class="line"><span class="comment"># 将k8s代理改为ipvs, 最后一行添加</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">kubeproxy.config.k8s.io/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">KubeProxyConfiguration</span></span><br><span class="line"><span class="attr">featureGates:</span></span><br><span class="line">  <span class="attr">SupportIPVSProxyMode:</span> <span class="literal">true</span></span><br><span class="line"><span class="attr">mode:</span> <span class="string">ipvs</span></span><br></pre></td></tr></table></figure>
+
+<p>集群初始化（<strong>注：需要在12小时内完成整个集群部署，否则证书会过期</strong>）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init --config=kubeadm-config.yaml --upload-certs | tee kubeadm-init.log</span><br><span class="line">mkdir -p $HOME/.kube</span><br><span class="line">sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config</span><br><span class="line">sudo chown $(id -u):$(id -g) $HOME/.kube/config</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加master节点</span></span><br><span class="line">kubeadm join 192.168.180.100:6444 --token abcdef.0123456789abcdef \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:04d5aa7619d1ebe925a9ac5f7ad8d69dc511d18ee158c40f737837692b3bb41a \</span><br><span class="line">    --control-plane --certificate-key fcc0f31d68fff8886666649f3363ae888e02915bdaea213a8d74d9add061893a</span><br><span class="line">    </span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加工作节点</span></span><br><span class="line">kubeadm join 192.168.180.100:6444 --token abcdef.0123456789abcdef \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:440a02125afb176cb517893deda010b2252c041973cdd4ea01bc6ba712d7b280</span><br></pre></td></tr></table></figure>
+
+<p><strong>将配置文件复制到其他master节点</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">scp -r  ~/install-k8s/hightUse/* root@192.168.180.11:/root/install-k8s/hightUse</span><br><span class="line">scp -r  ~/install-k8s/hightUse/* root@192.168.180.31:/root/install-k8s/hightUse</span><br></pre></td></tr></table></figure>
+
+<p><strong>启动其他master节点</strong></p>
+<p><em>在文件夹~/install-k8s/hightUse下运行</em></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chmod a+x data/lb/start-haproxy.sh</span><br><span class="line">./data/lb/start-haproxy.sh</span><br><span class="line">chmod a+x data/lb/start-keepalived.sh</span><br><span class="line">./data/lb/start-keepalived.sh</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装k8s（同上）</strong></p>
+<p><strong>将master节点加入到主master节点</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kubeadm join 192.168.180.100:6444 --token abcdef.0123456789abcdef \</span><br><span class="line">    --discovery-token-ca-cert-hash sha256:440a02125afb176cb517893deda010b2252c041973cdd4ea01bc6ba712d7b280 \</span><br><span class="line">    --control-plane --certificate-key e6fe032d63e01c1c1a61824b46b4a6e28535fd34ea527656a409ec65433f126a</span><br></pre></td></tr></table></figure>
+
+<p><strong>每个节点都启动后，重启HAProxy-K8S</strong></p>
+<p>修改vi ~/install-k8s/hightUse/data/lb/etc/haproxy.cfg</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">global</span><br><span class="line">log 127.0.0.1 local0</span><br><span class="line">log 127.0.0.1 local1 notice</span><br><span class="line">maxconn 4096</span><br><span class="line"><span class="meta">#</span><span class="bash">chroot /usr/share/haproxy</span></span><br><span class="line"><span class="meta">#</span><span class="bash">user haproxy</span></span><br><span class="line"><span class="meta">#</span><span class="bash">group haproxy</span></span><br><span class="line">daemon</span><br><span class="line"></span><br><span class="line">defaults</span><br><span class="line">    log     global</span><br><span class="line">    mode    http</span><br><span class="line">    option  httplog</span><br><span class="line">    option  dontlognull</span><br><span class="line">    retries 3</span><br><span class="line">    option redispatch</span><br><span class="line">    timeout connect  5000</span><br><span class="line">    timeout client  50000</span><br><span class="line">    timeout server  50000</span><br><span class="line"></span><br><span class="line">frontend stats-front</span><br><span class="line">  bind *:8081</span><br><span class="line">  mode http</span><br><span class="line">  default_backend stats-back</span><br><span class="line"></span><br><span class="line">frontend fe_k8s_6444</span><br><span class="line">  bind *:6444</span><br><span class="line">  mode tcp</span><br><span class="line">  timeout client 1h</span><br><span class="line">  log global</span><br><span class="line">  option tcplog</span><br><span class="line">  default_backend be_k8s_6443</span><br><span class="line">  acl is_websocket hdr(Upgrade) -i WebSocket</span><br><span class="line">  acl is_websocket hdr_beg(Host) -i ws</span><br><span class="line"></span><br><span class="line">backend stats-back</span><br><span class="line">  mode http</span><br><span class="line">  balance roundrobin</span><br><span class="line">  stats uri /haproxy/stats</span><br><span class="line">  stats auth pxcstats:secret</span><br><span class="line"></span><br><span class="line">backend be_k8s_6443</span><br><span class="line">  mode tcp</span><br><span class="line">  timeout queue 1h</span><br><span class="line">  timeout server 1h</span><br><span class="line">  timeout connect 1h</span><br><span class="line">  log global</span><br><span class="line">  balance roundrobin</span><br><span class="line">  server rancher01 192.168.180.21:6443</span><br><span class="line">  server rancher02 192.168.180.11:6443</span><br><span class="line">  server rancher03 192.168.180.31:6443</span><br></pre></td></tr></table></figure>
+
+<p>重启HAProxy-K8S容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker rm -f HAProxy-K8S &amp;&amp; bash /root/install-k8s/hightUse/data/lb/start-haproxy.sh</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 若连接不上180.100，可重启keepalived</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> docker rm -f Keepalived-K8S &amp;&amp; bash /root/install-k8s/hightUse/data/lb/start-keepalived.sh</span></span><br></pre></td></tr></table></figure>
+
+<p>将配置覆盖其他master节点的配置，并重启HAProxy-K8S容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">scp ~/install-k8s/hightUse/data/lb/etc/haproxy.cfg root@192.168.180.31:/root/install-k8s/hightUse/data/lb/etc/haproxy.cfg</span><br><span class="line">scp ~/install-k8s/hightUse/data/lb/etc/haproxy.cfg root@192.168.180.11:/root/install-k8s/hightUse/data/lb/etc/haproxy.cfg</span><br></pre></td></tr></table></figure>
+
+<p><strong>Etcd 集群状态查看</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@rt-master21 hightUse]$ kubectl -n kube-system exec etcd-rt-master21 -- etcdctl --endpoints=https://192.168.180.21:2379,https://192.168.180.11:2379,https://192.168.180.31:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/server.crt --key=/etc/kubernetes/pki/etcd/server.key endpoint health</span><br><span class="line">kubectl get endpoints kube-controller-manager --namespace=kube-system -o yaml</span><br><span class="line">kubectl get endpoints kube-scheduler --namespace=kube-system -o yaml</span><br></pre></td></tr></table></figure>
+
+<p><strong>处理某个master节点关闭后，无法使用kubectl</strong></p>
+<p>vi ~/.kube/config</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 修改server: https://192.168.180.100:6443 为本机ip</span></span><br><span class="line">server: https://192.168.180.11:6443</span><br></pre></td></tr></table></figure>
+
+<p><strong>K8S重新加入MASTER节点，避免ETCD错误</strong></p>
+<p><em>我们有时候会有删除，再重新加入master节点的需求，比如master机器改名。这里注意重新加入时，经常会出现etcd报错，如下</em></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[check-etcd] Checking that the etcd cluster is healthy</span><br></pre></td></tr></table></figure>
+
+<p><em>删除etcd信息</em></p>
+<p>在master01节点上执行命令，进入etcd的容器里</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">[root@rt-master21 vagrant]# kubectl exec -it etcd-rt-master21 sh -n kube-system</span><br><span class="line"><span class="meta">#</span><span class="bash">输入命令</span></span><br><span class="line">etcdctl --endpoints 127.0.0.1:2379 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key member list</span><br><span class="line"><span class="meta">#</span><span class="bash"> bf50d6c7bfb98b43, started, rt-master21, https://192.168.180.21:2380, https://192.168.180.21:2379, <span class="literal">false</span></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> da4f3d6e4d869225, started, rt-master11, https://10.0.2.15:2380, https://10.0.2.15:2379, <span class="literal">false</span></span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 因为我们的rt-master11机器对应的<span class="built_in">hash</span>是da4f3d6e4d869225。我们下一步就是根据<span class="built_in">hash</span>删除etcd信息，执行如下命令</span></span><br><span class="line">etcdctl --endpoints 127.0.0.1:2379 --cacert /etc/kubernetes/pki/etcd/ca.crt --cert /etc/kubernetes/pki/etcd/server.crt --key /etc/kubernetes/pki/etcd/server.key member remove da4f3d6e4d869225</span><br></pre></td></tr></table></figure>
+
+<p><strong>获取master加入的token</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">kubeadm init phase upload-certs --upload-certs</span><br><span class="line"><span class="meta">#</span><span class="bash"> b = 2f530afd934070166d4520badf1c86c56d018358e018d6e7d97ef5f08fef9d4f</span></span><br><span class="line">kubeadm token create --print-join-command</span><br><span class="line"><span class="meta">#</span><span class="bash"> a = kubeadm join 192.168.180.100:6444 --token 2rmyg7.qorrwlcux6pz3r0s     --discovery-token-ca-cert-hash sha256:418f932dd8fe8d516f980980285688e5bc299e746f9697c94638aafd23814eca</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 加入master的命令为 a + --control-plane --certificate-key + b</span></span><br><span class="line">kubeadm join 192.168.180.100:6444 --token 2rmyg7.qorrwlcux6pz3r0s     --discovery-token-ca-cert-hash sha256:418f932dd8fe8d516f980980285688e5bc299e746f9697c94638aafd23814eca --control-plane --certificate-key 2f530afd934070166d4520badf1c86c56d018358e018d6e7d97ef5f08fef9d4f</span><br></pre></td></tr></table></figure>
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/29/CentOS%E9%80%9A%E8%BF%87Docker%E8%BF%90%E8%A1%8CAbp%E9%A1%B9%E7%9B%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rongtao">
+      <meta itemprop="description" content="用于分享日常学习">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="荣陶博客">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/05/29/CentOS%E9%80%9A%E8%BF%87Docker%E8%BF%90%E8%A1%8CAbp%E9%A1%B9%E7%9B%AE/" class="post-title-link" itemprop="url">CentOS通过Docker运行Abp项目</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-05-29 09:09:28 / 修改时间：11:14:05" itemprop="dateCreated datePublished" datetime="2020-05-29T09:09:28+08:00">2020-05-29</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h1><ol>
+<li>涉及工具<br> 操作系统: CentOS7<br> 虚拟机工具: VirtualBox<br> 工具: Vagrant</li>
+<li>工具使用<br> 通过Vagrant工具, 可以很方便地在VirtualBox创建一台CentOS7的虚拟机, 通过Vagrant也可以配置虚拟机与宿主机的网络连接<br> <strong>Vagrantfile</strong>配置 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> -*- mode: ruby -*-</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> vi: <span class="built_in">set</span> ft=ruby :</span></span><br><span class="line">Vagrant.configure("2") do |config|</span><br><span class="line">config.vm.box = "centos/7"</span><br><span class="line"></span><br><span class="line">    config.vm.provider "vmware_fusion" do |v|</span><br><span class="line">    v.vmx["memsize"] = "254"</span><br><span class="line">    v.vmx["numvcpus"] = "1"</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    config.vm.provider "virtualbox" do |v|</span><br><span class="line">    v.customize ["modifyvm", :id, "--memory", "254"]</span><br><span class="line">    v.customize ["modifyvm", :id, "--cpus", "1"]</span><br><span class="line">    end</span><br><span class="line"></span><br><span class="line">    #ip需要跟虚拟机里默认分配的IP段，需要到虚拟机里查看</span><br><span class="line">    #config.vm.network :private_network, ip: "10.0.2.18"</span><br><span class="line">    #桥接网络，可以跟本地wifi通网段</span><br><span class="line">    #config.vm.network "public_network", :bridge =&gt; "en0: Wi-Fi (Airport)", :ip =&gt; "192.168.31.21"</span><br><span class="line">    config.vm.network "public_network", :bridge =&gt; "en0: Wi-Fi (Airport)", :ip =&gt; "192.168.180.21"</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash">按照docker容器的预处理命令</span></span><br><span class="line">config.vm.provision "shell", privileged: true, path: "./setup.sh"</span><br><span class="line">end</span><br></pre></td></tr></table></figure></li>
+<li>在CentOS安装Docker<br> <em>为了避免安装过程中出现错误, 可先安装编译工具</em><br> <code>yum install -y gcc  make gcc-c++ kernel-devel</code><br> 3.1 进入root用户命令行, 安装yum的工具<br> <code>yum install -y yum-utils</code><br> 3.2 配置Docker最新的源<br> <code>yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</code><br> 3.3 安装Docker<br> <code>yum install docker-ce docker-ce-cli containerd.io</code><br> 3.4 启动Docker<br> <code>systemctl start docker</code><br> 3.5 设置开机启动Docker<br> <code>systemctl enable docker</code></li>
+<li>设置虚拟机共享文件<br> 选中虚拟机-&gt;右击设置-&gt;共享文件夹-&gt;添加共享文件夹(设置自动加载, 固定分配)</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/18/IIS%E8%87%AA%E5%8A%A8%E5%8F%91%E5%B8%83/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -280,10 +529,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-05-14 09:25:40 / 修改时间：09:41:51" itemprop="dateCreated datePublished" datetime="2020-05-14T09:25:40+08:00">2020-05-14</time>
+              <time title="创建时间：2020-05-14 09:25:40" itemprop="dateCreated datePublished" datetime="2020-05-14T09:25:40+08:00">2020-05-14</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-19 17:04:47" itemprop="dateModified" datetime="2020-06-19T17:04:47+08:00">2020-06-19</time>
+              </span>
 
           
 
@@ -303,7 +558,9 @@
 <p> 其中<code>ListToDownExcel</code>的方法主要是获取文件流, 需要根据具体业务</p>
 </li>
 <li><p>在<strong>Application</strong>层中应用导出接口</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public async Task&lt;FileContentResult&gt; ExportAsset(AssetSearchPageInput input)</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F;获取需要导出的数据</span><br><span class="line">    var dataList &#x3D; await _assetManager.GetLoadFilterData(input.Asset).ToListAsync();</span><br><span class="line">    &#x2F;&#x2F;转换为导出模型</span><br><span class="line">    var datas &#x3D; ObjectMapper.Map&lt;List&lt;AssetExportDto&gt;&gt;(dataList);</span><br><span class="line">    &#x2F;&#x2F;execl文件导出</span><br><span class="line">    return ExcelManager.GetFileResponse(datas, &quot;xxx.xls&quot;, &quot;xxx&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">public async Task&lt;FileContentResult&gt; ExportAsset(AssetSearchPageInput input)</span><br><span class="line">&#123;</span><br><span class="line">    &#x2F;&#x2F;获取需要导出的数据</span><br><span class="line">    var dataList &#x3D; await _assetManager.GetLoadFilterData(input.Asset).ToListAsync();</span><br><span class="line">    &#x2F;&#x2F;转换为导出模型</span><br><span class="line">    var datas &#x3D; ObjectMapper.Map&lt;List&lt;AssetExportDto&gt;&gt;(dataList);</span><br><span class="line">    &#x2F;&#x2F;execl文件导出</span><br><span class="line">    return ExcelManager.GetFileResponse(datas, &quot;xxx.xls&quot;, &quot;xxx&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+</li>
 </ol>
 
       
@@ -786,14 +1043,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-count">9</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-count">7</span>
         <span class="site-state-item-name">标签</span></a>
       </div>
   </nav>
